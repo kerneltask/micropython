@@ -35,10 +35,9 @@
 #define MICROPY_PY_UHASHLIB         (1)
 #define MICROPY_PY_MACHINE          (1)
 #define MICROPY_USE_INTERNAL_PRINTF (0)
+#define MICROPY_VFS                 (1)
 
 // type definitions for the specific machine
-
-#define BYTES_PER_WORD (4)
 
 #define MICROPY_MAKE_POINTER_CALLABLE(p) ((void*)((mp_uint_t)(p) | 1))
 
@@ -58,7 +57,11 @@ typedef long mp_off_t;
 #define MICROPY_PORT_BUILTINS \
     { MP_OBJ_NEW_QSTR(MP_QSTR_open), (mp_obj_t)&mp_builtin_open_obj },
 
+// extra built-in modules to add to the list of known ones
+extern const struct _mp_obj_module_t mp_module_uos;
+
 #define MICROPY_PORT_BUILTIN_MODULES \
+    { MP_ROM_QSTR(MP_QSTR_uos), MP_ROM_PTR(&mp_module_uos) }, \
     { MP_ROM_QSTR(MP_QSTR_umachine), MP_ROM_PTR(&mp_module_machine) }, \
 
 // We need to provide a declaration/definition of alloca()

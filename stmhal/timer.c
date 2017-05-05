@@ -1302,6 +1302,7 @@ STATIC mp_obj_t pyb_timer_channel_callback(mp_obj_t self_in, mp_obj_t callback) 
     } else if (mp_obj_is_callable(callback)) {
         self->callback = callback;
         uint8_t tim_id = self->timer->tim_id;
+        __HAL_TIM_CLEAR_IT(&self->timer->tim, TIMER_IRQ_MASK(self->channel));
         if (tim_id == 1) {
             HAL_NVIC_EnableIRQ(TIM1_CC_IRQn);
         #if defined(TIM8) // STM32F401 doesn't have a TIM8
@@ -1363,6 +1364,7 @@ STATIC void timer_handle_irq_channel(pyb_timer_obj_t *tim, uint8_t channel, mp_o
 
             // execute callback if it's set
             if (callback != mp_const_none) {
+                mp_sched_lock();
                 // When executing code within a handler we must lock the GC to prevent
                 // any memory allocations.  We must also catch any exceptions.
                 gc_lock();
@@ -1382,6 +1384,7 @@ STATIC void timer_handle_irq_channel(pyb_timer_obj_t *tim, uint8_t channel, mp_o
                     mp_obj_print_exception(&mp_plat_print, (mp_obj_t)nlr.ret_val);
                 }
                 gc_unlock();
+                mp_sched_unlock();
             }
         }
     }
