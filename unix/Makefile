@@ -211,7 +211,7 @@ fast:
 # build a minimal interpreter
 minimal:
 	$(MAKE) COPT="-Os -DNDEBUG" CFLAGS_EXTRA='-DMP_CONFIGFILE="<mpconfigport_minimal.h>"' \
-	    BUILD=build-minimal PROG=micropython_minimal FROZEN_DIR= \
+	    BUILD=build-minimal PROG=micropython_minimal FROZEN_DIR= FROZEN_MPY_DIR= \
 	    MICROPY_PY_BTREE=0 MICROPY_PY_FFI=0 MICROPY_PY_SOCKET=0 MICROPY_PY_THREAD=0 \
 	    MICROPY_PY_TERMIOS=0 MICROPY_PY_USSL=0 \
 	    MICROPY_USE_READLINE=0
@@ -262,7 +262,7 @@ coverage_test: coverage
 	gcov -o build-coverage/extmod ../extmod/*.c
 
 # Value of configure's --host= option (required for cross-compilation).
-# Deduce it from CROSS_COMPILE by default, but can be overriden.
+# Deduce it from CROSS_COMPILE by default, but can be overridden.
 ifneq ($(CROSS_COMPILE),)
 CROSS_COMPILE_HOST = --host=$(patsubst %-,%,$(CROSS_COMPILE))
 else

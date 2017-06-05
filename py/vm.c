@@ -690,8 +690,7 @@ unwind_jump:;
                     }
                     ip = (const byte*)MP_OBJ_TO_PTR(POP()); // pop destination ip for jump
                     if (unum != 0) {
-                        // pop iter and iter_buf
-                        sp--;
+                        // pop the exhausted iterator
                         sp -= MP_OBJ_ITER_BUF_NSLOTS;
                     }
                     DISPATCH_WITH_PEND_EXC_CHECK();
@@ -948,7 +947,7 @@ unwind_jump:;
                     DECODE_UINT;
                     // unum & 0xff == n_positional
                     // (unum >> 8) & 0xff == n_keyword
-                    // We have folowing stack layout here:
+                    // We have following stack layout here:
                     // fun arg0 arg1 ... kw0 val0 kw1 val1 ... seq dict <- TOS
                     sp -= (unum & 0xff) + ((unum >> 7) & 0x1fe) + 2;
                     #if MICROPY_STACKLESS
@@ -1019,7 +1018,7 @@ unwind_jump:;
                     DECODE_UINT;
                     // unum & 0xff == n_positional
                     // (unum >> 8) & 0xff == n_keyword
-                    // We have folowing stack layout here:
+                    // We have following stack layout here:
                     // fun self arg0 arg1 ... kw0 val0 kw1 val1 ... seq dict <- TOS
                     sp -= (unum & 0xff) + ((unum >> 7) & 0x1fe) + 3;
                     #if MICROPY_STACKLESS
@@ -1436,6 +1435,7 @@ unwind_loop:
             } else if (code_state->prev != NULL) {
                 mp_globals_set(code_state->old_globals);
                 code_state = code_state->prev;
+                size_t n_state = mp_decode_uint_value(code_state->fun_bc->bytecode);
                 fastn = &code_state->state[n_state - 1];
                 exc_stack = (mp_exc_stack_t*)(code_state->state + n_state);
                 // variables that are visible to the exception handler (declared volatile)

@@ -38,8 +38,8 @@
 #include <net/net_pkt.h>
 #include <net/dns_resolve.h>
 
-#define DEBUG 0
-#if DEBUG // print debugging info
+#define DEBUG_PRINT 0
+#if DEBUG_PRINT // print debugging info
 #define DEBUG_printf printf
 #else // don't print debugging info
 #define DEBUG_printf(...) (void)0
@@ -165,7 +165,7 @@ static void sock_received_cb(struct net_context *context, struct net_pkt *pkt, i
         DEBUG_printf(" (appdatalen=%d), token: %p", pkt->appdatalen, net_pkt_token(pkt));
     }
     DEBUG_printf("\n");
-    #if DEBUG > 1
+    #if DEBUG_PRINT > 1
     net_pkt_print_frags(pkt);
     #endif
 
@@ -587,7 +587,8 @@ STATIC mp_obj_t mod_getaddrinfo(size_t n_args, const mp_obj_t *args) {
 
     // Raise error only if there's nothing to return, otherwise
     // it may be IPv4 vs IPv6 differences.
-    if (state.status != 0 && mp_obj_len(state.result) == 0) {
+    mp_int_t len = MP_OBJ_SMALL_INT_VALUE(mp_obj_len(state.result));
+    if (state.status != 0 && len == 0) {
         mp_raise_OSError(state.status);
     }
 
