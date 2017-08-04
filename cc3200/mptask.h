@@ -1,5 +1,5 @@
 /*
- * This file is part of the Micro Python project, http://micropython.org/
+ * This file is part of the MicroPython project, http://micropython.org/
  *
  * The MIT License (MIT)
  *
@@ -41,6 +41,6 @@ extern StackType_t mpTaskStack[];
 /******************************************************************************
  DECLARE PUBLIC FUNCTIONS
  ******************************************************************************/
-extern void TASK_Micropython (void *pvParameters);
+extern void TASK_MicroPython (void *pvParameters);
 
 #endif // MICROPY_INCLUDED_CC3200_MPTASK_H
