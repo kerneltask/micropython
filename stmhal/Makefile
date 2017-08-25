@@ -19,7 +19,7 @@ QSTR_DEFS = qstrdefsport.h $(BUILD)/pins_qstr.h $(BUILD)/modstm_qstr.h
 FROZEN_MPY_DIR ?= modules
 
 # include py core make definitions
-include ../py/py.mk
+include $(TOP)/py/py.mk
 
 LD_DIR=boards
 CMSIS_DIR=cmsis
@@ -27,10 +27,10 @@ HAL_DIR=hal/$(MCU_SERIES)
 USBDEV_DIR=usbdev
 #USBHOST_DIR=usbhost
 FATFS_DIR=lib/oofatfs
-DFU=../tools/dfu.py
+DFU=$(TOP)/tools/dfu.py
 # may need to prefix dfu-util with sudo
 USE_PYDFU ?= 1
-PYDFU ?= ../tools/pydfu.py
+PYDFU ?= $(TOP)/tools/pydfu.py
 DFU_UTIL ?= dfu-util
 DEVICE=0483:df11
 STFLASH ?= st-flash
@@ -40,9 +40,9 @@ OPENOCD_CONFIG ?= boards/openocd_stm32f4.cfg
 CROSS_COMPILE = arm-none-eabi-
 
 INC += -I.
-INC += -I..
+INC += -I$(TOP)
 INC += -I$(BUILD)
-INC += -I../lib/cmsis/inc
+INC += -I$(TOP)/lib/cmsis/inc
 INC += -I$(CMSIS_DIR)/
 INC += -I$(HAL_DIR)/inc
 INC += -I$(USBDEV_DIR)/core/inc -I$(USBDEV_DIR)/class/inc
@@ -397,6 +397,7 @@ $(BUILD)/firmware.elf: $(OBJ)
 	$(Q)$(LD) $(LDFLAGS) -o $@ $^ $(LIBS)
 	$(Q)$(SIZE) $@
 
+PLLVALUES = boards/pllvalues.py
 MAKE_PINS = boards/make-pins.py
 BOARD_PINS = boards/$(BOARD)/pins.csv
 PREFIX_FILE = boards/stm32f4xx_prefix.c
@@ -406,8 +407,8 @@ GEN_PINS_QSTR = $(BUILD)/pins_qstr.h
 GEN_PINS_AF_CONST = $(HEADER_BUILD)/pins_af_const.h
 GEN_PINS_AF_PY = $(BUILD)/pins_af.py
 
-INSERT_USB_IDS = ../tools/insert-usb-ids.py
-FILE2H = ../tools/file2h.py
+INSERT_USB_IDS = $(TOP)/tools/insert-usb-ids.py
+FILE2H = $(TOP)/tools/file2h.py
 
 USB_IDS_FILE = usb.h
 CDCINF_TEMPLATE = pybcdc.inf_template
@@ -425,7 +426,7 @@ SRC_QSTR_AUTO_DEPS += $(GEN_CDCINF_HEADER)
 # any of the objects. The normal dependency generation will deal with the
 # case when pins.h is modified. But when it doesn't exist, we don't know
 # which source files might need it.
-$(OBJ): | $(HEADER_BUILD)/pins.h
+$(OBJ): | $(GEN_PINS_HDR)
 
 # With conditional pins, we may need to regenerate qstrdefs.h when config
 # options change.
@@ -443,11 +444,17 @@ $(BUILD)/%_$(BOARD).c $(HEADER_BUILD)/%.h $(HEADER_BUILD)/%_af_const.h $(BUILD)/
 $(BUILD)/pins_$(BOARD).o: $(BUILD)/pins_$(BOARD).c
 	$(call compile_c)
 
+GEN_PLLFREQTABLE_HDR = $(HEADER_BUILD)/pllfreqtable.h
 GEN_STMCONST_HDR = $(HEADER_BUILD)/modstm_const.h
 GEN_STMCONST_QSTR = $(BUILD)/modstm_qstr.h
 GEN_STMCONST_MPZ = $(HEADER_BUILD)/modstm_mpz.h
 CMSIS_MCU_LOWER = $(shell echo $(CMSIS_MCU) | tr '[:upper:]' '[:lower:]')
 CMSIS_MCU_HDR = cmsis/$(CMSIS_MCU_LOWER).h
+
+modmachine.c: $(GEN_PLLFREQTABLE_HDR)
+$(GEN_PLLFREQTABLE_HDR): $(PLLVALUES) | $(HEADER_BUILD)
+	$(ECHO) "Create $@"
+	$(Q)$(PYTHON) $(PLLVALUES) -c file:boards/$(BOARD)/stm32$(MCU_SERIES)xx_hal_conf.h > $@
 
 $(BUILD)/modstm.o: $(GEN_STMCONST_HDR)
 # Use a pattern rule here so that make will only call make-stmconst.py once to
@@ -464,4 +471,4 @@ $(GEN_CDCINF_FILE): $(CDCINF_TEMPLATE) $(INSERT_USB_IDS) $(USB_IDS_FILE) | $(HEA
 	$(ECHO) "Create $@"
 	$(Q)$(PYTHON) $(INSERT_USB_IDS) $(USB_IDS_FILE) $< > $@
 
-include ../py/mkrules.mk
+include $(TOP)/py/mkrules.mk
