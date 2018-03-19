@@ -30,7 +30,6 @@
 // CC3000 defines its own ENOBUFS (different to standard one!)
 #undef ENOBUFS
 
-#include "py/nlr.h"
 #include "py/objtuple.h"
 #include "py/objlist.h"
 #include "py/stream.h"
@@ -126,7 +125,7 @@ STATIC int cc3k_gethostbyname(mp_obj_t nic, const char *name, mp_uint_t len, uin
 
     if (ip == 0) {
         // unknown host
-        return MP_ENOENT;
+        return -2;
     }
 
     out_ip[0] = ip >> 24;
@@ -434,7 +433,7 @@ STATIC mp_obj_t cc3k_make_new(const mp_obj_type_t *type, size_t n_args, size_t n
 
     // set the pins to use
     SpiInit(
-        spi_get_handle(args[0]),
+        spi_from_mp_obj(args[0])->spi,
         pin_find(args[1]),
         pin_find(args[2]),
         pin_find(args[3])
@@ -532,8 +531,8 @@ STATIC mp_obj_t cc3k_ifconfig(mp_obj_t self_in) {
         netutils_format_ipv4_addr(ipconfig.aucDefaultGateway, NETUTILS_LITTLE),
         netutils_format_ipv4_addr(ipconfig.aucDNSServer, NETUTILS_LITTLE),
         netutils_format_ipv4_addr(ipconfig.aucDHCPServer, NETUTILS_LITTLE),
-        mp_obj_new_str(mac_vstr.buf, mac_vstr.len, false),
-        mp_obj_new_str((const char*)ipconfig.uaSSID, strlen((const char*)ipconfig.uaSSID), false),
+        mp_obj_new_str(mac_vstr.buf, mac_vstr.len),
+        mp_obj_new_str((const char*)ipconfig.uaSSID, strlen((const char*)ipconfig.uaSSID)),
     };
     return mp_obj_new_tuple(MP_ARRAY_SIZE(tuple), tuple);
 }

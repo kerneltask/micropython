@@ -27,9 +27,7 @@
 #include <string.h>
 #include <assert.h>
 
-#include "py/nlr.h"
 #include "py/objlist.h"
-#include "py/runtime0.h"
 #include "py/runtime.h"
 #include "py/stackctrl.h"
 
@@ -160,7 +158,7 @@ STATIC mp_obj_t list_subscr(mp_obj_t self_in, mp_obj_t index, mp_obj_t value) {
             mp_obj_list_t *self = MP_OBJ_TO_PTR(self_in);
             mp_bound_slice_t slice;
             if (!mp_seq_get_fast_slice_indexes(self->len, index, &slice)) {
-                mp_raise_NotImplementedError("");
+                mp_raise_NotImplementedError(NULL);
             }
 
             mp_int_t len_adj = slice.start - slice.stop;
@@ -200,7 +198,7 @@ STATIC mp_obj_t list_subscr(mp_obj_t self_in, mp_obj_t index, mp_obj_t value) {
             mp_obj_get_array(value, &value_len, &value_items);
             mp_bound_slice_t slice_out;
             if (!mp_seq_get_fast_slice_indexes(self->len, index, &slice_out)) {
-                mp_raise_NotImplementedError("");
+                mp_raise_NotImplementedError(NULL);
             }
             mp_int_t len_adj = value_len - (slice_out.stop - slice_out.start);
             //printf("Len adj: %d\n", len_adj);

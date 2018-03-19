@@ -28,11 +28,9 @@
 #include <stdio.h>
 #include <assert.h>
 
-#include "py/nlr.h"
 #include "py/parsenumbase.h"
 #include "py/smallint.h"
 #include "py/objint.h"
-#include "py/runtime0.h"
 #include "py/runtime.h"
 
 #if MICROPY_PY_BUILTINS_FLOAT
@@ -209,7 +207,7 @@ mp_obj_t mp_obj_int_binary_op(mp_binary_op_t op, mp_obj_t lhs_in, mp_obj_t rhs_i
         return mp_obj_new_float(flhs / frhs);
 #endif
 
-    } else if (op >= MP_BINARY_OP_INPLACE_OR) {
+    } else if (op >= MP_BINARY_OP_INPLACE_OR && op < MP_BINARY_OP_CONTAINS) {
         mp_obj_int_t *res = mp_obj_int_new_mpz();
 
         switch (op) {

@@ -85,6 +85,7 @@
 #define MICROPY_PY_BUILTINS_POW3    (1)
 #define MICROPY_PY_MICROPYTHON_MEM_INFO (1)
 #define MICROPY_PY_ALL_SPECIAL_METHODS (1)
+#define MICROPY_PY_REVERSE_SPECIAL_METHODS (1)
 #define MICROPY_PY_ARRAY_SLICE_ASSIGN (1)
 #define MICROPY_PY_BUILTINS_SLICE_ATTRS (1)
 #define MICROPY_PY_SYS_EXIT         (1)
@@ -96,18 +97,20 @@
 #define MICROPY_PY_SYS_MAXSIZE      (1)
 #define MICROPY_PY_SYS_STDFILES     (1)
 #define MICROPY_PY_SYS_EXC_INFO     (1)
+#define MICROPY_PY_COLLECTIONS_DEQUE (1)
 #define MICROPY_PY_COLLECTIONS_ORDEREDDICT (1)
 #ifndef MICROPY_PY_MATH_SPECIAL_FUNCTIONS
 #define MICROPY_PY_MATH_SPECIAL_FUNCTIONS (1)
 #endif
 #define MICROPY_PY_CMATH            (1)
 #define MICROPY_PY_IO_FILEIO        (1)
-#define MICROPY_PY_IO_RESOURCE_STREAM (1)
 #define MICROPY_PY_GC_COLLECT_RETVAL (1)
 #define MICROPY_MODULE_FROZEN_STR   (1)
 
+#ifndef MICROPY_STACKLESS
 #define MICROPY_STACKLESS           (0)
 #define MICROPY_STACKLESS_STRICT    (0)
+#endif
 
 #define MICROPY_PY_OS_STATVFS       (1)
 #define MICROPY_PY_UTIME            (1)
@@ -120,7 +123,7 @@
 #define MICROPY_PY_UHEAPQ           (1)
 #define MICROPY_PY_UTIMEQ           (1)
 #define MICROPY_PY_UHASHLIB         (1)
-#if MICROPY_PY_USSL && MICROPY_SSL_AXTLS
+#if MICROPY_PY_USSL
 #define MICROPY_PY_UHASHLIB_SHA1    (1)
 #endif
 #define MICROPY_PY_UBINASCII        (1)
@@ -145,7 +148,10 @@
 // names in exception messages (may require more RAM).
 #define MICROPY_ERROR_REPORTING     (MICROPY_ERROR_REPORTING_DETAILED)
 #define MICROPY_WARNINGS            (1)
+#define MICROPY_ERROR_PRINTER       (&mp_stderr_print)
 #define MICROPY_PY_STR_BYTES_CMP_WARN (1)
+
+extern const struct _mp_print_t mp_stderr_print;
 
 // Define to 1 to use undertested inefficient GC helper implementation
 // (if more efficient arch-specific one is not available).
