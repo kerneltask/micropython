@@ -31,7 +31,6 @@
 #include "py/mphal.h"
 #include "irq.h"
 #include "pin.h"
-#include "genhdr/pins.h"
 #include "bufhelper.h"
 #include "dma.h"
 #include "i2c.h"
@@ -131,9 +130,9 @@ const pyb_i2c_obj_t pyb_i2c_obj[] = {
     #endif
 };
 
-#if defined(STM32F7) || defined(STM32L4)
+#if defined(STM32F7) || defined(STM32L4) || defined(STM32H7)
 
-// The STM32F0, F3, F7 and L4 use a TIMINGR register rather than ClockSpeed and
+// The STM32F0, F3, F7, H7 and L4 use a TIMINGR register rather than ClockSpeed and
 // DutyCycle.
 
 #if defined(STM32F746xx)
@@ -157,6 +156,17 @@ const pyb_i2c_obj_t pyb_i2c_obj[] = {
         {PYB_I2C_SPEED_STANDARD, 0xb0420f13}, \
         {PYB_I2C_SPEED_FULL, 0x70330309}, \
         {PYB_I2C_SPEED_FAST, 0x50100103}, \
+    }
+#define MICROPY_HW_I2C_BAUDRATE_DEFAULT (PYB_I2C_SPEED_FULL)
+#define MICROPY_HW_I2C_BAUDRATE_MAX (PYB_I2C_SPEED_FAST)
+
+#elif defined(STM32H7)
+
+// I2C TIMINGs obtained from the STHAL examples.
+#define MICROPY_HW_I2C_BAUDRATE_TIMING { \
+        {PYB_I2C_SPEED_STANDARD, 0x40604E73}, \
+        {PYB_I2C_SPEED_FULL, 0x00901954}, \
+        {PYB_I2C_SPEED_FAST, 0x10810915}, \
     }
 #define MICROPY_HW_I2C_BAUDRATE_DEFAULT (PYB_I2C_SPEED_FULL)
 #define MICROPY_HW_I2C_BAUDRATE_MAX (PYB_I2C_SPEED_FAST)
@@ -250,29 +260,29 @@ void i2c_init(I2C_HandleTypeDef *i2c) {
     #if defined(MICROPY_HW_I2C1_SCL)
     } else if (i2c == &I2CHandle1) {
         i2c_unit = 1;
-        scl_pin = &MICROPY_HW_I2C1_SCL;
-        sda_pin = &MICROPY_HW_I2C1_SDA;
+        scl_pin = MICROPY_HW_I2C1_SCL;
+        sda_pin = MICROPY_HW_I2C1_SDA;
         __I2C1_CLK_ENABLE();
     #endif
     #if defined(MICROPY_HW_I2C2_SCL)
     } else if (i2c == &I2CHandle2) {
         i2c_unit = 2;
-        scl_pin = &MICROPY_HW_I2C2_SCL;
-        sda_pin = &MICROPY_HW_I2C2_SDA;
+        scl_pin = MICROPY_HW_I2C2_SCL;
+        sda_pin = MICROPY_HW_I2C2_SDA;
         __I2C2_CLK_ENABLE();
     #endif
     #if defined(MICROPY_HW_I2C3_SCL)
     } else if (i2c == &I2CHandle3) {
         i2c_unit = 3;
-        scl_pin = &MICROPY_HW_I2C3_SCL;
-        sda_pin = &MICROPY_HW_I2C3_SDA;
+        scl_pin = MICROPY_HW_I2C3_SCL;
+        sda_pin = MICROPY_HW_I2C3_SDA;
         __I2C3_CLK_ENABLE();
     #endif
     #if defined(MICROPY_HW_I2C4_SCL)
     } else if (i2c == &I2CHandle4) {
         i2c_unit = 4;
-        scl_pin = &MICROPY_HW_I2C4_SCL;
-        sda_pin = &MICROPY_HW_I2C4_SDA;
+        scl_pin = MICROPY_HW_I2C4_SCL;
+        sda_pin = MICROPY_HW_I2C4_SDA;
         __I2C4_CLK_ENABLE();
     #endif
     } else {

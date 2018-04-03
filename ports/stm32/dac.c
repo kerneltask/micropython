@@ -33,7 +33,6 @@
 #include "dac.h"
 #include "dma.h"
 #include "pin.h"
-#include "genhdr/pins.h"
 
 /// \moduleref pyb
 /// \class DAC - digital to analog conversion
@@ -213,9 +212,9 @@ STATIC mp_obj_t pyb_dac_make_new(const mp_obj_type_t *type, size_t n_args, size_
         dac_id = mp_obj_get_int(args[0]);
     } else {
         const pin_obj_t *pin = pin_find(args[0]);
-        if (pin == &pin_A4) {
+        if (pin == pin_A4) {
             dac_id = 1;
-        } else if (pin == &pin_A5) {
+        } else if (pin == pin_A5) {
             dac_id = 2;
         } else {
             nlr_raise(mp_obj_new_exception_msg_varg(&mp_type_ValueError, "Pin(%q) doesn't have DAC capabilities", pin->name));
