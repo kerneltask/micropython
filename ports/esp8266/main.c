@@ -33,6 +33,10 @@
 #include "py/mperrno.h"
 #include "py/mphal.h"
 #include "py/gc.h"
+
+// This needs to be defined before any ESP SDK headers are included
+#define USE_US_TIMER 1
+
 #include "extmod/misc.h"
 #include "lib/mp-readline/readline.h"
 #include "lib/utils/pyexec.h"
@@ -88,6 +92,7 @@ STATIC void mp_reset(void) {
 }
 
 void soft_reset(void) {
+    gc_sweep_all();
     mp_hal_stdout_tx_str("PYB: soft reboot\r\n");
     mp_hal_delay_us(10000); // allow UART to flush output
     mp_reset();
@@ -125,6 +130,7 @@ soft_reset:
 }
 
 void user_init(void) {
+    system_timer_reinit();
     system_init_done_cb(init_done);
 }
 
@@ -166,7 +172,7 @@ int mp_vprintf(const mp_print_t *print, const char *fmt, va_list args);
 int DEBUG_printf(const char *fmt, ...) {
     va_list ap;
     va_start(ap, fmt);
-    int ret = mp_vprintf(&MICROPY_DEBUG_PRINTER_DEST, fmt, ap);
+    int ret = mp_vprintf(MICROPY_DEBUG_PRINTER, fmt, ap);
     va_end(ap);
     return ret;
 }
