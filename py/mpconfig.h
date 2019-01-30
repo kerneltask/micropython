@@ -26,6 +26,23 @@
 #ifndef MICROPY_INCLUDED_PY_MPCONFIG_H
 #define MICROPY_INCLUDED_PY_MPCONFIG_H
 
+// Current version of MicroPython
+#define MICROPY_VERSION_MAJOR 1
+#define MICROPY_VERSION_MINOR 10
+#define MICROPY_VERSION_MICRO 0
+
+// Combined version as a 32-bit number for convenience
+#define MICROPY_VERSION ( \
+    MICROPY_VERSION_MAJOR << 16 \
+    | MICROPY_VERSION_MINOR << 8 \
+    | MICROPY_VERSION_MICRO)
+
+// String version
+#define MICROPY_VERSION_STRING \
+    MP_STRINGIFY(MICROPY_VERSION_MAJOR) "." \
+    MP_STRINGIFY(MICROPY_VERSION_MINOR) "." \
+    MP_STRINGIFY(MICROPY_VERSION_MICRO)
+
 // This file contains default configuration settings for MicroPython.
 // You can override any of the options below using mpconfigport.h file
 // located in a directory of your port.
@@ -392,6 +409,11 @@
 #define MICROPY_DEBUG_VERBOSE (0)
 #endif
 
+// Whether to enable a simple VM stack overflow check
+#ifndef MICROPY_DEBUG_VM_STACK_OVERFLOW
+#define MICROPY_DEBUG_VM_STACK_OVERFLOW (0)
+#endif
+
 /*****************************************************************************/
 /* Optimisations                                                             */
 
@@ -440,6 +462,11 @@
 // Whether to use the VFS reader for importing files
 #ifndef MICROPY_READER_VFS
 #define MICROPY_READER_VFS (0)
+#endif
+
+// Whether any readers have been defined
+#ifndef MICROPY_HAS_FILE_READER
+#define MICROPY_HAS_FILE_READER (MICROPY_READER_POSIX || MICROPY_READER_VFS)
 #endif
 
 // Hook for the VM at the start of the opcode loop (can contain variable
@@ -804,6 +831,11 @@ typedef double mp_float_t;
 #define MICROPY_PY_BUILTINS_BYTEARRAY (1)
 #endif
 
+// Whether to support dict.fromkeys() class method
+#ifndef MICROPY_PY_BUILTINS_DICT_FROMKEYS
+#define MICROPY_PY_BUILTINS_DICT_FROMKEYS (1)
+#endif
+
 // Whether to support memoryview object
 #ifndef MICROPY_PY_BUILTINS_MEMORYVIEW
 #define MICROPY_PY_BUILTINS_MEMORYVIEW (0)
@@ -847,6 +879,11 @@ typedef double mp_float_t;
 // match CPython and ranges are equal if they yield the same sequence of items.
 #ifndef MICROPY_PY_BUILTINS_RANGE_BINOP
 #define MICROPY_PY_BUILTINS_RANGE_BINOP (0)
+#endif
+
+// Support for callling next() with second argument
+#ifndef MICROPY_PY_BUILTINS_NEXT2
+#define MICROPY_PY_BUILTINS_NEXT2 (0)
 #endif
 
 // Whether to support rounding of integers (incl bignum); eg round(123,-1)=120
@@ -1168,6 +1205,12 @@ typedef double mp_float_t;
 
 #ifndef MICROPY_PY_UCTYPES
 #define MICROPY_PY_UCTYPES (0)
+#endif
+
+// Whether to provide SHORT, INT, LONG, etc. types in addition to
+// exact-bitness types like INT16, INT32, etc.
+#ifndef MICROPY_PY_UCTYPES_NATIVE_C_TYPES
+#define MICROPY_PY_UCTYPES_NATIVE_C_TYPES (1)
 #endif
 
 #ifndef MICROPY_PY_UZLIB
