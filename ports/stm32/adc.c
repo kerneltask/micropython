@@ -51,13 +51,18 @@
 ///     val = adc.read_core_vref()      # read MCU VREF
 
 /* ADC defintions */
+
 #if defined(STM32H7)
 #define ADCx                    (ADC3)
+#define PIN_ADC_MASK            PIN_ADC3
+#define pin_adc_table           pin_adc3
 #else
 #define ADCx                    (ADC1)
+#define PIN_ADC_MASK            PIN_ADC1
+#define pin_adc_table           pin_adc1
 #endif
+
 #define ADCx_CLK_ENABLE         __HAL_RCC_ADC1_CLK_ENABLE
-#define ADC_NUM_CHANNELS        (19)
 
 #if defined(STM32F0)
 
@@ -104,7 +109,6 @@
 #define ADC_CAL1                ((uint16_t*)(0x1FF1E820))
 #define ADC_CAL2                ((uint16_t*)(0x1FF1E840))
 #define ADC_CAL_BITS            (16)
-#define ADC_CHANNEL_VBAT        ADC_CHANNEL_VBAT_DIV4
 
 #elif defined(STM32L4)
 
@@ -125,21 +129,24 @@
 #if defined(STM32F091xC)
 #define VBAT_DIV (2)
 #elif defined(STM32F405xx) || defined(STM32F415xx) || \
-    defined(STM32F407xx) || defined(STM32F417xx) || \
-    defined(STM32F401xC) || defined(STM32F401xE) || \
-    defined(STM32F411xE)
+      defined(STM32F407xx) || defined(STM32F417xx) || \
+      defined(STM32F401xC) || defined(STM32F401xE)
 #define VBAT_DIV (2)
-#elif defined(STM32F427xx) || defined(STM32F429xx) || \
+#elif defined(STM32F411xE) || defined(STM32F413xx) || \
+      defined(STM32F427xx) || defined(STM32F429xx) || \
       defined(STM32F437xx) || defined(STM32F439xx) || \
-      defined(STM32F446xx) || \
-      defined(STM32F722xx) || defined(STM32F723xx) || \
+      defined(STM32F446xx)
+#define VBAT_DIV (4)
+#elif defined(STM32F722xx) || defined(STM32F723xx) || \
       defined(STM32F732xx) || defined(STM32F733xx) || \
       defined(STM32F746xx) || defined(STM32F765xx) || \
       defined(STM32F767xx) || defined(STM32F769xx)
 #define VBAT_DIV (4)
 #elif defined(STM32H743xx)
 #define VBAT_DIV (4)
-#elif defined(STM32L432xx) || defined(STM32L475xx) || \
+#elif defined(STM32L432xx) || \
+      defined(STM32L451xx) || defined(STM32L452xx) || \
+      defined(STM32L462xx) || defined(STM32L475xx) || \
       defined(STM32L476xx) || defined(STM32L496xx)
 #define VBAT_DIV (3)
 #else
@@ -156,6 +163,13 @@
 // scale and calibration values for VBAT and VREF
 #define ADC_SCALE (ADC_SCALE_V / ((1 << ADC_CAL_BITS) - 1))
 #define VREFIN_CAL ((uint16_t *)ADC_CAL_ADDRESS)
+
+#ifndef __HAL_ADC_IS_CHANNEL_INTERNAL
+#define __HAL_ADC_IS_CHANNEL_INTERNAL(channel) \
+    (channel == ADC_CHANNEL_VBAT \
+     || channel == ADC_CHANNEL_VREFINT \
+     || channel == ADC_CHANNEL_TEMPSENSOR)
+#endif
 
 typedef struct _pyb_obj_adc_t {
     mp_obj_base_t base;
@@ -180,8 +194,11 @@ STATIC bool is_adcx_channel(int channel) {
 #if defined(STM32F411xE)
     // The HAL has an incorrect IS_ADC_CHANNEL macro for the F411 so we check for temp
     return IS_ADC_CHANNEL(channel) || channel == ADC_CHANNEL_TEMPSENSOR;
-#elif defined(STM32F0) || defined(STM32F4) || defined(STM32F7) || defined(STM32H7)
+#elif defined(STM32F0) || defined(STM32F4) || defined(STM32F7)
     return IS_ADC_CHANNEL(channel);
+#elif defined(STM32H7)
+    return __HAL_ADC_IS_CHANNEL_INTERNAL(channel)
+        || IS_ADC_CHANNEL(__HAL_ADC_DECIMAL_NB_TO_CHANNEL(channel));
 #elif defined(STM32L4)
     ADC_HandleTypeDef handle;
     handle.Instance = ADCx;
@@ -233,14 +250,19 @@ STATIC void adcx_init_periph(ADC_HandleTypeDef *adch, uint32_t resolution) {
     adch->Init.EOCSelection          = ADC_EOC_SINGLE_CONV;
     adch->Init.ExternalTrigConv      = ADC_SOFTWARE_START;
     adch->Init.ExternalTrigConvEdge  = ADC_EXTERNALTRIGCONVEDGE_NONE;
-    #if defined(STM32F0) || defined(STM32F4) || defined(STM32F7)
+    #if defined(STM32F0)
+    adch->Init.ClockPrescaler        = ADC_CLOCK_SYNC_PCLK_DIV4; // 12MHz
+    adch->Init.ScanConvMode          = DISABLE;
+    adch->Init.DataAlign             = ADC_DATAALIGN_RIGHT;
+    adch->Init.DMAContinuousRequests = DISABLE;
+    adch->Init.SamplingTimeCommon    = ADC_SAMPLETIME_55CYCLES_5; // ~4uS
+    #elif defined(STM32F4) || defined(STM32F7)
     adch->Init.ClockPrescaler        = ADC_CLOCK_SYNC_PCLK_DIV2;
     adch->Init.ScanConvMode          = DISABLE;
     adch->Init.DataAlign             = ADC_DATAALIGN_RIGHT;
     adch->Init.DMAContinuousRequests = DISABLE;
     #elif defined(STM32H7)
     adch->Init.ClockPrescaler        = ADC_CLOCK_SYNC_PCLK_DIV4;
-    adch->Init.BoostMode             = ENABLE;
     adch->Init.ScanConvMode          = DISABLE;
     adch->Init.LowPowerAutoWait      = DISABLE;
     adch->Init.Overrun               = ADC_OVR_DATA_OVERWRITTEN;
@@ -259,10 +281,6 @@ STATIC void adcx_init_periph(ADC_HandleTypeDef *adch, uint32_t resolution) {
     #error Unsupported processor
     #endif
 
-    #if defined(STM32F0)
-    adch->Init.SamplingTimeCommon = ADC_SAMPLETIME_71CYCLES_5;
-    #endif
-
     HAL_ADC_Init(adch);
 
     #if defined(STM32H7)
@@ -274,13 +292,10 @@ STATIC void adcx_init_periph(ADC_HandleTypeDef *adch, uint32_t resolution) {
 }
 
 STATIC void adc_init_single(pyb_obj_adc_t *adc_obj) {
-    if (!is_adcx_channel(adc_obj->channel)) {
-        return;
-    }
 
     if (ADC_FIRST_GPIO_CHANNEL <= adc_obj->channel && adc_obj->channel <= ADC_LAST_GPIO_CHANNEL) {
         // Channels 0-16 correspond to real pins. Configure the GPIO pin in ADC mode.
-        const pin_obj_t *pin = pin_adc1[adc_obj->channel];
+        const pin_obj_t *pin = pin_adc_table[adc_obj->channel];
         mp_hal_pin_config(pin, MP_HAL_PIN_MODE_ADC, MP_HAL_PIN_PULL_NONE, 0);
     }
 
@@ -299,17 +314,23 @@ STATIC void adc_init_single(pyb_obj_adc_t *adc_obj) {
 STATIC void adc_config_channel(ADC_HandleTypeDef *adc_handle, uint32_t channel) {
     ADC_ChannelConfTypeDef sConfig;
 
-    sConfig.Channel = channel;
+    #if defined (STM32H7)
+    sConfig.Rank = ADC_REGULAR_RANK_1;
+    if (__HAL_ADC_IS_CHANNEL_INTERNAL(channel) == 0) {
+        channel = __HAL_ADC_DECIMAL_NB_TO_CHANNEL(channel);
+    }
+    #else
     sConfig.Rank = 1;
+    #endif
+    sConfig.Channel = channel;
+
 #if defined(STM32F0)
-    sConfig.SamplingTime = ADC_SAMPLETIME_71CYCLES_5;
+    sConfig.SamplingTime = ADC_SAMPLETIME_55CYCLES_5;
 #elif defined(STM32F4) || defined(STM32F7)
     sConfig.SamplingTime = ADC_SAMPLETIME_15CYCLES;
 #elif defined(STM32H7)
-    if (channel == ADC_CHANNEL_VREFINT
-        || channel == ADC_CHANNEL_TEMPSENSOR
-        || channel == ADC_CHANNEL_VBAT) {
-        sConfig.SamplingTime = ADC_SAMPLETIME_387CYCLES_5;
+    if (__HAL_ADC_IS_CHANNEL_INTERNAL(channel)) {
+        sConfig.SamplingTime = ADC_SAMPLETIME_810CYCLES_5;
     } else {
         sConfig.SamplingTime = ADC_SAMPLETIME_8CYCLES_5;
     }
@@ -318,9 +339,7 @@ STATIC void adc_config_channel(ADC_HandleTypeDef *adc_handle, uint32_t channel) 
     sConfig.OffsetRightShift = DISABLE;
     sConfig.OffsetSignedSaturation = DISABLE;
 #elif defined(STM32L4)
-    if (channel == ADC_CHANNEL_VREFINT
-        || channel == ADC_CHANNEL_TEMPSENSOR
-        || channel == ADC_CHANNEL_VBAT) {
+    if (__HAL_ADC_IS_CHANNEL_INTERNAL(channel)) {
         sConfig.SamplingTime = ADC_SAMPLETIME_247CYCLES_5;
     } else {
         sConfig.SamplingTime = ADC_SAMPLETIME_12CYCLES_5;
@@ -389,11 +408,11 @@ STATIC mp_obj_t adc_make_new(const mp_obj_type_t *type, size_t n_args, size_t n_
 
     uint32_t channel;
 
-    if (MP_OBJ_IS_INT(pin_obj)) {
+    if (mp_obj_is_int(pin_obj)) {
         channel = adc_get_internal_channel(mp_obj_get_int(pin_obj));
     } else {
         const pin_obj_t *pin = pin_find(pin_obj);
-        if ((pin->adc_num & PIN_ADC1) == 0) {
+        if ((pin->adc_num & PIN_ADC_MASK) == 0) {
             // No ADC1 function on that pin
             nlr_raise(mp_obj_new_exception_msg_varg(&mp_type_ValueError, "pin %q does not have ADC capabilities", pin->name));
         }
@@ -407,7 +426,7 @@ STATIC mp_obj_t adc_make_new(const mp_obj_type_t *type, size_t n_args, size_t n_
 
     if (ADC_FIRST_GPIO_CHANNEL <= channel && channel <= ADC_LAST_GPIO_CHANNEL) {
         // these channels correspond to physical GPIO ports so make sure they exist
-        if (pin_adc1[channel] == NULL) {
+        if (pin_adc_table[channel] == NULL) {
             nlr_raise(mp_obj_new_exception_msg_varg(&mp_type_ValueError,
                 "channel %d not available on this board", channel));
         }
@@ -690,7 +709,7 @@ void adc_init_all(pyb_adc_all_obj_t *adc_all, uint32_t resolution, uint32_t en_m
         if (en_mask & (1 << channel)) {
             // Channels 0-16 correspond to real pins. Configure the GPIO pin in
             // ADC mode.
-            const pin_obj_t *pin = pin_adc1[channel];
+            const pin_obj_t *pin = pin_adc_table[channel];
             if (pin) {
                 mp_hal_pin_config(pin, MP_HAL_PIN_MODE_ADC, MP_HAL_PIN_PULL_NONE, 0);
             }
@@ -704,7 +723,7 @@ int adc_get_resolution(ADC_HandleTypeDef *adcHandle) {
     uint32_t res_reg = ADC_GET_RESOLUTION(adcHandle);
 
     switch (res_reg) {
-       #if !defined(STM32H7)
+        #if !defined(STM32H7)
         case ADC_RESOLUTION_6B:  return 6;
         #endif
         case ADC_RESOLUTION_8B:  return 8;

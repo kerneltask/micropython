@@ -229,8 +229,7 @@ STATIC void esp_scan_cb(void *result, STATUS status) {
 STATIC mp_obj_t esp_scan(mp_obj_t self_in) {
     require_if(self_in, STATION_IF);
     if ((wifi_get_opmode() & STATION_MODE) == 0) {
-        nlr_raise(mp_obj_new_exception_msg(&mp_type_OSError,
-            "STA must be active"));
+        mp_raise_msg(&mp_type_OSError, "STA must be active");
     }
     mp_obj_t list = mp_obj_new_list(0, NULL);
     esp_scan_list = &list;
@@ -247,7 +246,7 @@ STATIC mp_obj_t esp_scan(mp_obj_t self_in) {
         ets_loop_iter();
     }
     if (list == MP_OBJ_NULL) {
-        nlr_raise(mp_obj_new_exception_msg(&mp_type_OSError, "scan failed"));
+        mp_raise_msg(&mp_type_OSError, "scan failed");
     }
     return list;
 }
@@ -313,8 +312,7 @@ STATIC mp_obj_t esp_ifconfig(size_t n_args, const mp_obj_t *args) {
             wifi_softap_dhcps_stop();
         }
         if (!wifi_set_ip_info(self->if_id, &info)) {
-          nlr_raise(mp_obj_new_exception_msg(&mp_type_OSError,
-            "wifi_set_ip_info() failed"));
+          mp_raise_msg(&mp_type_OSError, "wifi_set_ip_info() failed");
         }
         dns_setserver(0, &dns_addr);
         if (restart_dhcp_server) {
@@ -347,7 +345,7 @@ STATIC mp_obj_t esp_config(size_t n_args, const mp_obj_t *args, mp_map_t *kwargs
     if (kwargs->used != 0) {
 
         for (mp_uint_t i = 0; i < kwargs->alloc; i++) {
-            if (MP_MAP_SLOT_IS_FILLED(kwargs, i)) {
+            if (mp_map_slot_is_filled(kwargs, i)) {
                 #define QS(x) (uintptr_t)MP_OBJ_NEW_QSTR(x)
                 switch ((uintptr_t)kwargs->table[i].key) {
                     case QS(MP_QSTR_mac): {
